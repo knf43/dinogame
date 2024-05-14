@@ -1,0 +1,272 @@
+# GAM Models
+
+#1 TRIAL as a linear term
+
+Family: gaussian 
+Link function: identity 
+
+Formula:
+transformed_rt_ms ~ Trial + s(ID, bs = "re") + s(sent_id, bs = "re")
+
+Parametric coefficients:
+              Estimate Std. Error t value Pr(>|t|)    
+(Intercept)  6.576e+00  4.602e-02 142.902   <2e-16 ***
+Trial       -1.655e-04  1.791e-05  -9.242   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+              edf Ref.df      F p-value    
+s(ID)       18.53     19 42.486  <2e-16 ***
+s(sent_id) 103.27    191  1.435  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.0881   Deviance explained = 9.81%
+-REML =  11424  Scale est. = 0.43757   n = 11236
+
+# Model 2 + Stress LINEAR
+> summary(model_2_linear)
+
+Family: gaussian 
+Link function: identity 
+
+Formula:
+transformed_rt_ms ~ Trial + Stress + s(ID, bs = "re") + s(sent_id, 
+    bs = "re")
+
+Parametric coefficients:
+                   Estimate Std. Error t value Pr(>|t|)    
+(Intercept)       6.587e+00  4.699e-02 140.187   <2e-16 ***
+Trial            -1.660e-04  1.791e-05  -9.266   <2e-16 ***
+Stressparoxytone -2.220e-02  1.874e-02  -1.185    0.236    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+              edf Ref.df      F p-value    
+s(ID)       18.53     19 42.472  <2e-16 ***
+s(sent_id) 102.37    190  1.395  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.0881   Deviance explained = 9.81%
+-REML =  11427  Scale est. = 0.43758   n = 11236
+
+Nested model comparisons
+Analysis of Deviance Table
+
+Model 1: transformed_rt_ms ~ Trial + s(ID, bs = "re") + s(sent_id, bs = "re")
+Model 2: transformed_rt_ms ~ Trial + Stress + s(ID, bs = "re") + s(sent_id, 
+    bs = "re")
+  Resid. Df Resid. Dev        Df Deviance Pr(>Chi)  
+1     11064     4862.4                              
+2     11064     4862.5 -0.096036 -0.11548  0.07434 .
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Model 3 + Syllable structure linear
+Family: gaussian 
+Link function: identity 
+
+Formula:
+transformed_rt_ms ~ Trial + Stress + syllable_struct + s(ID, 
+    bs = "re") + s(sent_id, bs = "re")
+
+Parametric coefficients:
+                     Estimate Std. Error t value Pr(>|t|)    
+(Intercept)         6.6103848  0.0478200 138.235   <2e-16 ***
+Trial              -0.0001662  0.0000179  -9.284   <2e-16 ***
+Stressparoxytone   -0.0217346  0.0184727  -1.177   0.2394    
+syllable_structCVC -0.0464293  0.0184425  -2.518   0.0118 *  
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+             edf Ref.df      F p-value    
+s(ID)      18.53     19 42.388  <2e-16 ***
+s(sent_id) 99.37    189  1.328  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.0881   Deviance explained = 9.79%
+-REML =  11427  Scale est. = 0.43759   n = 11236
+
+anova(model_2_linear, rt_plot_3, test = "Chisq")
+Analysis of Deviance Table
+
+Model 1: transformed_rt_ms ~ Trial + Stress + s(ID, bs = "re") + s(sent_id, 
+    bs = "re")
+Model 2: transformed_rt_ms ~ Trial + Stress + syllable_struct + s(ID, 
+    bs = "re") + s(sent_id, bs = "re")
+  Resid. Df Resid. Dev      Df Deviance Pr(>Chi)
+1     11064     4862.5                          
+2     11066     4863.4 -2.0536   -0.924   0.3592
+
+# Model 4, Add lex score linear
+Family: gaussian 
+Link function: identity 
+
+Formula:
+transformed_rt_ms ~ Trial + Stress + syllable_struct + lex_score + 
+    s(ID, bs = "re") + s(sent_id, bs = "re")
+
+Parametric coefficients:
+                     Estimate Std. Error t value Pr(>|t|)    
+(Intercept)         6.6072868  0.0489000 135.118   <2e-16 ***
+Trial              -0.0001660  0.0000179  -9.272   <2e-16 ***
+Stressparoxytone   -0.0217207  0.0184719  -1.176   0.2397    
+syllable_structCVC -0.0464488  0.0184416  -2.519   0.0118 *  
+lex_score          -0.0019364  0.0034127  -0.567   0.5705    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+             edf Ref.df      F p-value    
+s(ID)      17.56     18 43.566  <2e-16 ***
+s(sent_id) 99.36    189  1.333  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.0881   Deviance explained = 9.79%
+-REML =  11431  Scale est. = 0.43759   n = 11236
+
+Analysis of Deviance Table: Adding lex score significantly improves model fit
+
+Model 1: transformed_rt_ms ~ Trial + Stress + syllable_struct + s(ID, 
+    bs = "re") + s(sent_id, bs = "re")
+Model 2: transformed_rt_ms ~ Trial + Stress + syllable_struct + lex_score + 
+    s(ID, bs = "re") + s(sent_id, bs = "re")
+  Resid. Df Resid. Dev         Df  Deviance  Pr(>Chi)    
+1     11066     4863.4                                   
+2     11066     4863.4 0.00021038 0.0080234 0.0004337 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+# Add WM score
+> summary(rt_plot_5)
+
+Family: gaussian 
+Link function: identity 
+
+Formula:
+transformed_rt_ms ~ Trial + Stress + syllable_struct + lex_score + 
+    s(wm_score_num, bs = "re") + s(Trial, bs = "re") + s(ID, 
+    bs = "re") + s(sent_id, bs = "re")
+
+Parametric coefficients:
+                     Estimate Std. Error t value Pr(>|t|)    
+(Intercept)         6.607e+00  4.895e-02 134.968   <2e-16 ***
+Trial              -1.660e-04  1.992e-05  -8.332   <2e-16 ***
+Stressparoxytone   -2.172e-02  1.847e-02  -1.176   0.2397    
+syllable_structCVC -4.645e-02  1.844e-02  -2.519   0.0118 *  
+lex_score          -1.937e-03  3.413e-03  -0.567   0.5704    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+                      edf Ref.df      F p-value    
+s(wm_score_num) 2.493e-04      1  0.000   0.458    
+s(Trial)        8.175e-30      1  0.000   0.947    
+s(ID)           1.756e+01     18 43.568  <2e-16 ***
+s(sent_id)      9.936e+01    189  1.334  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.0881   Deviance explained = 9.79%
+-REML =  11431  Scale est. = 0.43759   n = 11236
+
+> anova(rt_plot_4, rt_plot_5, test = "Chisq")
+Analysis of Deviance Table
+
+Model 1: transformed_rt_ms ~ Trial + Stress + syllable_struct + lex_score + 
+    s(ID, bs = "re") + s(sent_id, bs = "re")
+Model 2: transformed_rt_ms ~ Trial + Stress + syllable_struct + lex_score + 
+    s(wm_score_num, bs = "re") + s(Trial, bs = "re") + s(ID, 
+    bs = "re") + s(sent_id, bs = "re")
+  Resid. Df Resid. Dev       Df   Deviance Pr(>Chi)
+1     11066     4863.4                             
+2     11066     4863.4 0.028559 7.3031e-06   0.1469
+
+# add phono freq, linear term
+> summary(rt_plot_6)
+
+Family: gaussian 
+Link function: identity 
+
+Formula:
+transformed_rt_ms ~ Trial + Stress + syllable_struct + lex_score + 
+    s(wm_score_num, bs = "re") + phono_freq + s(ID, bs = "re") + 
+    s(sent_id, bs = "re")
+
+Parametric coefficients:
+                     Estimate Std. Error t value Pr(>|t|)    
+(Intercept)         6.603e+00  5.284e-02 124.967   <2e-16 ***
+Trial              -1.661e-04  1.791e-05  -9.273   <2e-16 ***
+Stressparoxytone   -2.169e-02  1.852e-02  -1.171   0.2416    
+syllable_structCVC -4.603e-02  1.859e-02  -2.476   0.0133 *  
+lex_score          -1.936e-03  3.413e-03  -0.567   0.5706    
+phono_freq          7.489e-02  3.516e-01   0.213   0.8313    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+                      edf Ref.df      F p-value    
+s(wm_score_num)  0.000249      1  0.000   0.458    
+s(ID)           17.563414     18 43.585  <2e-16 ***
+s(sent_id)      99.277970    188  1.348  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.0881   Deviance explained =  9.8%
+-REML =  11431  Scale est. = 0.43759   n = 11236
+> anova_comparison <- anova(rt_plot_5, rt_plot_6, test = "Chisq")
+> 
+> # Print the analysis of deviance table
+> print(anova_comparison)
+Analysis of Deviance Table
+
+Model 1: transformed_rt_ms ~ Trial + Stress + syllable_struct + lex_score + 
+    s(wm_score_num, bs = "re") + s(Trial, bs = "re") + s(ID, 
+    bs = "re") + s(sent_id, bs = "re")
+Model 2: transformed_rt_ms ~ Trial + Stress + syllable_struct + lex_score + 
+    s(wm_score_num, bs = "re") + phono_freq + s(ID, bs = "re") + 
+    s(sent_id, bs = "re")
+  Resid. Df Resid. Dev      Df Deviance Pr(>Chi)
+1     11066     4863.4                          
+2     11065     4863.0 0.64787  0.41128   0.2129
+
+#interactions: Trial:Stress 
+> summary(rt_plot_7)
+
+Family: gaussian 
+Link function: identity 
+
+Formula:
+transformed_rt_ms ~ s(Trial, by = Stress) + syllable_struct + 
+    lex_score + s(wm_score_num, bs = "re") + phono_freq + s(ID, 
+    bs = "re") + s(sent_id, bs = "re")
+
+Parametric coefficients:
+                    Estimate Std. Error t value Pr(>|t|)    
+(Intercept)         6.502536   0.051265 126.842   <2e-16 ***
+syllable_structCVC -0.045705   0.017957  -2.545   0.0109 *  
+lex_score          -0.001876   0.003433  -0.546   0.5847    
+phono_freq         -0.071894   0.339480  -0.212   0.8323    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+                                edf  Ref.df      F p-value    
+s(Trial):Stressoxytone    7.277e+00   8.236 21.944  <2e-16 ***
+s(Trial):Stressparoxytone 7.954e+00   8.673 17.196  <2e-16 ***
+s(wm_score_num)           7.519e-04   1.000  0.002   0.332    
+s(ID)                     1.757e+01  18.000 44.045  <2e-16 ***
+s(sent_id)                9.475e+01 189.000  1.168  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.106   Deviance explained = 11.6%
+-REML =  11334  Scale est. = 0.42905   n = 11236
+
+
