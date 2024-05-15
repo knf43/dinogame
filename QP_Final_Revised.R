@@ -156,234 +156,13 @@ head(accurate_data)
 
 #GAM FOR RTs
 
-# Basic model with just the cumulative RT as a smooth term
-model_1 <- gam(transformed_rt_ms ~ s(log_cumulative_rt_ms) +
-                 s(ID, bs = "re") + s(sent_id, bs = "re"),
-               , data = accurate_data, method = "REML")
-
-summary(model_1)
-
-gam_1_preds <- predict_gam(model_1)
-plot(gam_1_preds, series = "log_cumulative_rt_ms")
-
-# Create Model 1 Plot
-
-model_plot_1 <- gam(transformed_rt_ms ~ s(log_cumulative_rt_ms), data = accurate_data, method = "REML")
-
-summary(model_plot_1)
-
-# Create a prediction data frame
-pred_data <- data.frame(log_cumulative_rt_ms = seq(from = min(accurate_data$log_cumulative_rt_ms),
-                                                   to = max(accurate_data$log_cumulative_rt_ms), length.out = 100))
-
-# Predict transformed RT and convert back to original scale
-pred_data$predicted_log_rt_ms <- predict(model_plot_1, newdata = pred_data, type = "response")
-pred_data$predicted_rt_ms <- exp(pred_data$predicted_log_rt_ms) - 1  # Back-transform
-
-# Adjust pred_data to include a 'minutes' column for the log_cumulative_rt_ms
-pred_data$minutes = exp(pred_data$log_cumulative_rt_ms) / 60000  # Convert ms to minutes
-
-minute_breaks <- pretty(pred_data$minutes, n = 5)  
-labels_minutes <- sapply(minute_breaks, function(x) format(round(x, 2), nsmall = 2)) 
-
-ggplot(pred_data, aes(x = minutes, y = predicted_rt_ms)) +
-  geom_smooth(method = "loess", se = TRUE, color = "blue", fill = "skyblue") +
-  scale_x_continuous(name = "Log of Cumulative RT (minutes)",
-                     labels = scales::comma,  # Ensures nice formatting of numbers
-                     breaks = pretty(pred_data$minutes, n = 5)) +
-  labs(y = "Predicted Reaction Time (ms)",
-       title = "Predicted Reaction Time vs. Log of Cumulative RT",
-       subtitle = "Smoothed trend line with confidence interval") +
-  theme_minimal()
-
-#Alternative plots with level and trial as predictors
-# Original Model for reference
-model_plot_1 <- gam(transformed_rt_ms ~ s(log_cumulative_rt_ms), data = accurate_data, method = "REML")
-summary(model_plot_1)
-
-gam_1_model_preds <- predict_gam(model_plot_1)
-plot(gam_1_model_preds, series = "log_cumulative_rt_ms")
-
-# Model 2: Adding 'Level'
-model_plot_2 <- gam(transformed_rt_ms ~ s(Level, bs = "re"), data = accurate_data, method = "REML")
-summary(model_plot_2)
-
-gam_2_model_preds <- predict_gam(model_plot_2)
-plot(gam_2_model_preds, series = "Level")
-
-# Model 3: Adding 'Trial'
-model_plot_3 <- gam(transformed_rt_ms ~ s(Trial, bs = "re"), data = accurate_data, method = "REML")
-summary(model_plot_3)
-
-gam_3_model_preds <- predict_gam(model_plot_3)
-plot(gam_3_model_preds, series = "Trial")
-
-# Compare Model 1 with Model 2
-anova_result_1_vs_2 <- anova(model_plot_1, model_plot_2, test = "Chisq")
-
-# Compare Model 1 with Model 3
-anova_result_1_vs_3 <- anova(model_plot_1, model_plot_3, test = "Chisq")
-
-# Print the results
-print(anova_result_1_vs_2)
-print(anova_result_1_vs_3)c
-
-# Predict using the GAM 3 model
-# Fit a GAM with the original rt_ms as the response
-model_original <- gam(rt_ms ~ s(Trial, bs = "cs"), data = accurate_data, method = "REML")
-
-# Check the summary to understand the effect of Trial
-summary(model_original)
-
-pred_data_original <- data.frame(Trial = seq(min(accurate_data$Trial), max(accurate_data$Trial), length.out = 100))
-pred_data_original$predicted_rt_ms <- predict(model_original, newdata = pred_data_original, type = "response")
-
-ggplot(pred_data_original, aes(x = Trial, y = predicted_rt_ms)) +
-  geom_line() + 
-  geom_smooth(method = "loess", se = TRUE, color = "blue", fill = "skyblue") +
-  labs(x = "Trial", y = "Reaction Time (ms)", 
-       title = "Reaction Time vs. Trial", 
-       subtitle = "Trend and Smoothed Confidence Interval") +
-  theme_minimal()
-
-# Original vs transformed rt _ ms residuals
-
-# Calculate residuals and fitted values for the original model
-residuals_original <- residuals(model_original)
-fitted_original <- fitted(model_original)
-
-# Plot residuals vs. fitted values
-ggplot(data = data.frame(Fitted = fitted_original, Residuals = residuals_original), aes(x = Fitted, y = Residuals)) +
-  geom_point(alpha = 0.5) +
-  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
-  labs(title = "Residuals vs. Fitted for Original Model", x = "Fitted Values", y = "Residuals") +
-  theme_minimal()
-
-# Histogram of residuals
-ggplot(data = data.frame(Residuals = residuals_original), aes(x = Residuals)) +
-  geom_histogram(bins = 30, fill = "blue", color = "black") +
-  labs(title = "Histogram of Residuals for Original Model") +
-  theme_minimal()
-
-# Calculate residuals and fitted values for the transformed model
-residuals_transformed <- residuals(model_plot_3)
-fitted_transformed <- fitted(model_plot_3)
-
-# Plot residuals vs. fitted values
-ggplot(data = data.frame(Fitted = fitted_transformed, Residuals = residuals_transformed), aes(x = Fitted, y = Residuals)) +
-  geom_point(alpha = 0.5) +
-  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
-  labs(title = "Residuals vs. Fitted for Transformed Model", x = "Fitted Values", y = "Residuals") +
-  theme_minimal()
-
-# Histogram of residuals
-ggplot(data = data.frame(Residuals = residuals_transformed), aes(x = Residuals)) +
-  geom_histogram(bins = 30, fill = "blue", color = "black") +
-  labs(title = "Histogram of Residuals for Transformed Model") +
-  theme_minimal()
-
-# For the Original Model (rt_ms)
-bp_test_original <- bptest(model_original)
-
-# For the Transformed Model (transformed_rt_ms)
-bp_test_transformed <- bptest(model_plot_3)
-
-# Output the results
-print("Breusch-Pagan Test for Original Model:")
-print(bp_test_original)
-
-# original = significant heteroscedasticity 
-
-print("Breusch-Pagan Test for Transformed Model:")
-print(bp_test_transformed)
-
-# Compare other transformations
-# Fit a temporary model to use in the boxcox function
-temp_model <- lm(rt_ms ~ Trial, data = accurate_data)
-
-# Use boxcox to find the optimal lambda
-lambda_opt <- boxcox(temp_model, lambda = seq(-2, 2, by = 0.1))$x[which.max(boxcox(temp_model, lambda = seq(-2, 2, by = 0.1))$y)]
-
-# Step 2: Apply the Box-Cox transformation manually
-accurate_data$bc_rt_ms <- (accurate_data$rt_ms^lambda_opt - 1) / lambda_opt
-
-# Fit the GAM model with the Box-Cox transformed response
-model_bc <- gam(bc_rt_ms ~ s(Trial, bs = "cs"), data = accurate_data, method = "REML")
-
-# Print the summary of the Box-Cox model
-summary(model_bc)
-
-# square root transformation
-accurate_data$sqrt_rt_ms <- sqrt(accurate_data$rt_ms)
-
-# Fit models
-model_sqrt <- gam(sqrt_rt_ms ~ s(Trial, bs = "cs"), data = accurate_data, method = "REML")
-model_bc <- gam(bc_rt_ms ~ s(Trial, bs = "cs"), data = accurate_data, method = "REML")
-
-# Check diagnostics for each model
-summary(model_sqrt)
-summary(model_bc)
-summary(model_plot_3)
-
-# Extract residuals and fitted values
-data_sqrt <- data.frame(Fitted = fitted(model_sqrt), Residuals = residuals(model_sqrt), Model = "Square Root")
-data_bc <- data.frame(Fitted = fitted(model_bc), Residuals = residuals(model_bc), Model = "Box-Cox")
-data_log <- data.frame(Fitted = fitted(model_plot_3), Residuals = residuals(model_plot_3), Model = "Log Transformed")
-
-# Combine data
-residuals_data <- rbind(data_sqrt, data_bc, data_log)
-
-# Create the plot
-ggplot(residuals_data, aes(x = Fitted, y = Residuals, color = Model)) +
-  geom_point(alpha = 0.5) +
-  geom_smooth(method = "loess", se = TRUE) +
-  facet_wrap(~ Model, scales = "free") +
-  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
-  labs(title = "Residuals vs. Fitted Values for Different Transformations",
-       x = "Fitted Values", y = "Residuals") +
-  theme_minimal() +
-  theme(legend.position = "bottom")
-
-#test for heteroscedasticity 
-# Breusch-Pagan test for the Box-Cox Model
-bp_test_bc <- bptest(model_bc)
-
-# Breusch-Pagan test for the Log Transformed Model
-bp_test_log <- bptest(model_plot_3)
-
-# Breusch-Pagan test for the Square Root Model
-bp_test_sqrt <- bptest(model_sqrt)
-
-# Print the results
-print("Breusch-Pagan Test for Box-Cox Model:")
-print(bp_test_bc)
-
-print("Breusch-Pagan Test for Log Transformed Model:")
-print(bp_test_log)
-
-print("Breusch-Pagan Test for Square Root Model:")
-print(bp_test_sqrt)
-
-# Log transformed RT_MS = most stable in terms  of residual variability consistency 
 # Base plot - Model 1
 
 rt_plot_1 <- gam(transformed_rt_ms ~ Trial + s(ID, bs = "re") + s(sent_id, bs = "re"), data = accurate_data, method = "REML")
 
 summary(rt_plot_1)
 
-# Model 2: Keep "Trial" as a linear measure of learning, Add Stress as a non-linear term
-rt_model_2 <- gam(transformed_rt_ms ~ Trial + s(Stress, bs = "fs") + s(ID, bs = "re") + s(sent_id, bs = "re"), data = accurate_data, method = "REML")
-
-summary(rt_model_2)
-
-# Perform ANOVA to compare the models
-anova_comparison <- anova(rt_plot_1, rt_model_2, test = "Chisq")
-
-# Print the analysis of deviance table
-print(anova_comparison)
-
-
-# Model with Stress as a linear term
+# Model 2: Add Stress
 model_2_linear <- gam(transformed_rt_ms ~ Trial + Stress +
                         s(ID, bs = "re") + s(sent_id, bs = "re"),
                       data = accurate_data, method = "REML")
@@ -393,41 +172,14 @@ summary(model_2_linear)
 # Compare the new linear model to the previous non-linear model
 anova(rt_plot_1, model_2_linear, test = "Chisq")
 
-# Model 3
+# Model 3: Add syllable_struct
 rt_plot_3 <- gam(transformed_rt_ms ~ Trial + Stress + syllable_struct + s(ID, bs = "re") + s(sent_id, bs = "re"), data = accurate_data, method = "REML")
 
 summary(rt_plot_3)
 
-# plot syllable structure 
-new_data <- data.frame(
-  Trial = mean(accurate_data$Trial),
-  Stress = levels(accurate_data$Stress)[1],  # Fixing Stress to one level for simplicity
-  syllable_struct = levels(accurate_data$syllable_struct),
-  ID = unique(accurate_data$ID)[1],  # Assuming random effect levels are fixed
-  sent_id = unique(accurate_data$sent_id)[1]  # Assuming random effect levels are fixed
-)
+anova(model_2_linear, rt_plot_3, test = "Chisq")
 
-# Generate predictions with standard errors
-predictions <- predict(rt_plot_3, newdata = new_data, type = "response", se.fit = TRUE)
-new_data$fit <- predictions$fit
-new_data$se.fit <- predictions$se.fit
-
-# Adjust y-axis limits for better visibility
-ggplot(new_data, aes(x = syllable_struct, y = fit, fill = syllable_struct)) +
-  geom_bar(stat = "identity", position = "dodge", width = 0.5) +
-  geom_errorbar(aes(ymin = fit - 1.96 * se.fit, ymax = fit + 1.96 * se.fit), width = 0.2, position = position_dodge(0.5)) +
-  scale_y_continuous(limits = c(min(new_data$fit - 1.96 * new_data$se.fit), max(new_data$fit + 1.96 * new_data$se.fit))) +
-  labs(title = "Effect of Syllable Structure on Transformed RT",
-       x = "Syllable Structure",
-       y = "Predicted Transformed RT") +
-  theme_minimal()
-
-# Fit the new model with syllable_struct as a parametric term and name it rt_plot_3
-rt_plot_3 <- gam(transformed_rt_ms ~ Trial + Stress + syllable_struct + s(ID, bs = "re") + s(sent_id, bs = "re"), data = accurate_data, method = "REML")
-
-summary(rt_plot_3)
-
-# Generate predictions for the original dataset
+# Plot
 accurate_data$predicted_rt <- predict(rt_plot_3, newdata = accurate_data, type = "response")
 
 jitter_outliers <- function(outliers, width = 0.1) {
@@ -465,90 +217,56 @@ violin_plot <- ggplot(accurate_data, aes(x = syllable_struct, y = predicted_rt, 
 
 print(violin_plot)
 
-anova(model_2_linear, rt_plot_3, test = "Chisq")
-
-# Add lex score (norm)
+# Model 4: Add lex_score_norm
 rt_plot_4 <- gam(transformed_rt_ms ~ Trial + Stress + syllable_struct + lex_score_norm + s(ID, bs = "re") + s(sent_id, bs = "re"), data = accurate_data, method = "REML")
 
-# Summarize the updated model
 summary(rt_plot_4)
 
-# Perform ANOVA to compare rt_plot_3 and rt_plot_4
-anova_comparison <- anova(rt_plot_3, rt_plot_4, test = "Chisq")
+anova(rt_plot_3, rt_plot_4, test = "Chisq")
 
-# Print the analysis of deviance table
-print(anova_comparison)
+# Model 5: Add wm_score_num
+rt_plot_5 <- gam(transformed_rt_ms ~ s(Trial) + Stress + syllable_struct + lex_score_norm + wm_score_num + s(ID, bs = "re") + s(sent_id, bs = "re"), 
+                 data = accurate_data, method = "REML")
 
-# Add WM score
-
-rt_plot_5 <- gam(transformed_rt_ms ~ Trial + Stress + syllable_struct + lex_score_norm + s(wm_score_num, bs = "re") + s(Trial, bs = "re") + s(ID, bs = "re") + s(sent_id, bs = "re"), data = accurate_data, method = "REML")
-
-# Summarize the updated model
 summary(rt_plot_5)
 
 anova(rt_plot_4, rt_plot_5, test = "Chisq")
 
-# Add phono freq
-rt_plot_6 <- gam(transformed_rt_ms ~ Trial + Stress + syllable_struct + lex_score_norm + s(wm_score_num, bs = "re") + scaled_phono_freq + s(ID, bs = "re") + s(sent_id, bs = "re"), data = accurate_data, method = "REML")
+# Model 6: Add scaled_phono_freq
+rt_plot_6 <- gam(transformed_rt_ms ~ s(Trial) + Stress + syllable_struct + lex_score_norm + wm_score_num + scaled_phono_freq + s(ID, bs = "re") + s(sent_id, bs = "re"), 
+                 data = accurate_data, method = "REML")
 
-# Summarize the updated model
 summary(rt_plot_6)
 
-# Perform ANOVA to compare rt_plot_5 and rt_plot_6
-anova_comparison <- anova(rt_plot_5, rt_plot_6, test = "Chisq")
+anova(rt_plot_5, rt_plot_6, test = "Chisq")
 
-# Print the analysis of deviance table
-print(anova_comparison)
+# Model 7: Interaction Trial:Stress
+rt_plot_7 <- gam(transformed_rt_ms ~ s(Trial, by = Stress) + Stress + syllable_struct + lex_score_norm + wm_score_num + scaled_phono_freq + s(ID, bs = "re") + s(sent_id, bs = "re"), 
+                 data = accurate_data, method = "REML")
 
-# interaction stress and trial
-rt_plot_7 <- gam(transformed_rt_ms ~ s(Trial, by = Stress) + Stress + syllable_struct + lex_score_norm + s(wm_score_num, bs = "re") + scaled_phono_freq + s(ID, bs = "re") + s(sent_id, bs = "re"), data = accurate_data, method = "REML")
 
-# Summarize the updated model
 summary(rt_plot_7)
 
-# Generate predictions using predict_gam
-rt_plot_7_preds <- predict_gam(rt_plot_7, length_out = 25, exclude_terms = c("s(ID)", "s(sent_id)"))
-
-str(rt_plot_7_preds)
-
-colnames(rt_plot_7_preds)
-
-#plot
-interaction_plot <- ggplot(rt_plot_7_preds, aes(x = Trial, y = transformed_rt_ms, color = Stress)) +
-  geom_line(aes(group = Stress)) +
-  geom_ribbon(aes(ymin = lower_ci, ymax = upper_ci, fill = Stress), alpha = 0.2) +
-  labs(title = "Interaction Between Trial and Stress",
-       x = "Trial",
-       y = "Predicted Transformed RT") +
-  theme_minimal() +
-  theme(legend.position = "right")
-
-# Display the plot
-print(interaction_plot)
-
-#Anova
 anova(rt_plot_6, rt_plot_7, test = "Chisq")
 
-# Add interaction between syllable structure and trial 
+# Model 8: Interaction Trial: syllable_struct
 rt_plot_8 <- gam(transformed_rt_ms ~ 
                    s(Trial, by = syllable_struct) + 
                    s(Trial, by = Stress) + 
                    Stress +
                    syllable_struct + 
                    lex_score_norm + 
-                   s(wm_score_num, bs = "re") + 
+                   wm_score_num + 
                    scaled_phono_freq + 
                    s(ID, bs = "re") + 
                    s(sent_id, bs = "re"), 
                  data = accurate_data, method = "REML")
 
-# Summarize the updated model
 summary(rt_plot_8)
 
-#Anova
 anova(rt_plot_7, rt_plot_8, test = "Chisq")
 
-# Add interaction between lex score and trial 
+# Model 9: Interaction Trial: lex_score_norm
 rt_plot_9 <- gam(transformed_rt_ms ~ 
                    s(Trial, by = lex_score_norm) + 
                    s(Trial, by = syllable_struct) + 
@@ -556,19 +274,17 @@ rt_plot_9 <- gam(transformed_rt_ms ~
                    Stress + 
                    syllable_struct + 
                    lex_score_norm + 
-                   s(wm_score_num, bs = "re") + 
+                   wm_score_num + 
                    scaled_phono_freq + 
                    s(ID, bs = "re") + 
                    s(sent_id, bs = "re"), 
                  data = accurate_data, method = "REML")
 
-# Summarize the updated model
 summary(rt_plot_9)
 
-#Anova
 anova(rt_plot_8, rt_plot_9, test = "Chisq")
 
-# Add interaction between "wm_score_num" and trial 
+# Model 10: Interaction Trial: wm_score_num 
 rt_plot_10 <- gam(transformed_rt_ms ~ 
                     s(Trial, by = wm_score_num) + 
                     s(Trial, by = lex_score_norm) + 
@@ -577,19 +293,17 @@ rt_plot_10 <- gam(transformed_rt_ms ~
                     Stress + 
                     syllable_struct + 
                     lex_score_norm + 
-                    s(wm_score_num, bs = "re") + 
+                    wm_score_num + 
                     scaled_phono_freq + 
                     s(ID, bs = "re") + 
                     s(sent_id, bs = "re"), 
                   data = accurate_data, method = "REML")
 
-# Summarize the updated model
 summary(rt_plot_10)
 
-#Anova
 anova(rt_plot_9, rt_plot_10, test = "Chisq")
 
-#Add interaction between "phono_freq" and trial 
+# Model 11: Interaction Trial: scaled_phono_freq
 rt_plot_11 <- gam(transformed_rt_ms ~ 
                     s(Trial, by = scaled_phono_freq) + 
                     s(Trial, by = wm_score_num) + 
@@ -599,16 +313,14 @@ rt_plot_11 <- gam(transformed_rt_ms ~
                     Stress + 
                     syllable_struct + 
                     lex_score + 
-                    s(wm_score_num, bs = "re") + 
+                    wm_score_num + 
                     scaled_phono_freq + 
                     s(ID, bs = "re") + 
                     s(sent_id, bs = "re"), 
                   data = accurate_data, method = "REML")
 
-# Summarize the updated model
 summary(rt_plot_11)
 
-#Anova
 anova(rt_plot_10, rt_plot_11, test = "Chisq")
 
 # Accuracy GAMs
@@ -654,7 +366,7 @@ anova(acc_plot_3, acc_plot_4, test = "Chisq")
 
 # Model 5: Add wm_score_num
 
-acc_plot_5 <- gam(Accuracy ~ s(Trial) + s(Stress) + s(syllable_struct) + s(lex_score_norm) + s(wm_score_num) + s(ID, bs = "re") + s(sent_id, bs = "re"), 
+acc_plot_5 <- gam(Accuracy ~ s(Trial) + s(Stress) + s(syllable_struct) + s(lex_score_norm) + s(wm_score_num, k = 5) + s(ID, bs = "re") + s(sent_id, bs = "re"), 
                   data = accurate_data, method = "REML", family = binomial)
 
 summary(acc_plot_5)
@@ -662,52 +374,53 @@ summary(acc_plot_5)
 anova(acc_plot_4, acc_plot_5, test = "Chisq")
 
 # Model 6: Add scaled_phono_freq
-
-acc_plot_6 <- gam(Accuracy ~ s(Trial) + s(Stress) + s(syllable_struct) + s(lex_score_norm) + s(wm_score_num) + s(scaled_phono_freq) + s(ID, bs = "re") + s(sent_id, bs = "re"), 
+acc_plot_6 <- gam(Accuracy ~ s(Trial) + s(Stress) + s(syllable_struct) + s(lex_score_norm) + s(wm_score_num, k = 5) + s(scaled_phono_freq) + s(ID, bs = "re") + s(sent_id, bs = "re"), 
                   data = accurate_data, method = "REML", family = binomial)
 
 summary(acc_plot_6)
 
 anova(acc_plot_5, acc_plot_6, test = "Chisq")
 
-# Model 7: Interaction Trial:Stress
 
-acc_plot_7 <- gam(Accuracy ~ s(Trial, by = Stress) + s(Stress) + s(syllable_struct) + s(lex_score_norm) + s(wm_score_num) + s(scaled_phono_freq) + s(ID, bs = "re") + s(sent_id, bs = "re"), 
+# Model 7: Interaction Trial:Stress
+acc_plot_7 <- gam(Accuracy ~ s(Trial, by = Stress) + s(Stress) + s(syllable_struct) + s(lex_score_norm) + s(wm_score_num, k = 5) + s(scaled_phono_freq) + s(ID, bs = "re") + s(sent_id, bs = "re"), 
                   data = accurate_data, method = "REML", family = binomial)
 
 summary(acc_plot_7)
 
 anova(acc_plot_6, acc_plot_7, test = "Chisq")
 
-# Model 8: Interaction Trial: syllable_struct
 
-acc_plot_8 <- gam(Accuracy ~ s(Trial, by = syllable_struct) + s(Stress) + s(syllable_struct) + s(lex_score_norm) + s(wm_score_num) + s(scaled_phono_freq) + s(ID, bs = "re") + s(sent_id, bs = "re"), 
+# Model 8: Interaction Trial: syllable_struct
+acc_plot_8 <- gam(Accuracy ~ s(Trial, by = syllable_struct) + s(Stress) + s(syllable_struct) + s(lex_score_norm) + s(wm_score_num, k = 5) + s(scaled_phono_freq) + s(ID, bs = "re") + s(sent_id, bs = "re"), 
                   data = accurate_data, method = "REML", family = binomial)
 
 summary(acc_plot_8)
 
 anova(acc_plot_7, acc_plot_8, test = "Chisq")
 
-# Model 9: Interaction Trial:lex_score_norm
 
-acc_plot_9 <- gam(Accuracy ~ s(Trial, by = lex_score_norm) + s(Stress) + s(syllable_struct) + s(lex_score_norm) + s(wm_score_num) + s(scaled_phono_freq) + s(ID, bs = "re") + s(sent_id, bs = "re"), 
+# Model 9: Interaction Trial:lex_score_norm
+acc_plot_9 <- gam(Accuracy ~ s(Trial, by = lex_score_norm) + s(Stress) + s(syllable_struct) + s(lex_score_norm) + s(wm_score_num, k = 5) + s(scaled_phono_freq) + s(ID, bs = "re") + s(sent_id, bs = "re"), 
                   data = accurate_data, method = "REML", family = binomial)
 
 summary(acc_plot_9)
 
 anova(acc_plot_8, acc_plot_9, test = "Chisq")
 
+
 # Model 10: Interaction Trial:wm_score_num
-acc_plot_10 <- gam(Accuracy ~ s(Trial, by = wm_score_num) + s(Stress) + s(syllable_struct) + s(lex_score_norm) + s(wm_score_num) + s(scaled_phono_freq) + s(ID, bs = "re") + s(sent_id, bs = "re"), 
+acc_plot_10 <- gam(Accuracy ~ s(Trial, by = wm_score_num, k = 5) + s(Stress) + s(syllable_struct) + s(lex_score_norm) + s(wm_score_num, k = 5) + s(scaled_phono_freq) + s(ID, bs = "re") + s(sent_id, bs = "re"), 
                    data = accurate_data, method = "REML", family = binomial)
 
 summary(acc_plot_10)
 
 anova(acc_plot_9, acc_plot_10, test = "Chisq")
 
+
 # Model 11: Interaction Trial: scaled_phono_freq
 
-acc_plot_11 <- gam(Accuracy ~ s(Trial, by = scaled_phono_freq) + s(Stress) + s(syllable_struct) + s(lex_score_norm) + s(wm_score_num) + s(scaled_phono_freq) + s(ID, bs = "re") + s(sent_id, bs = "re"), 
+acc_plot_11 <- gam(Accuracy ~ s(Trial, by = scaled_phono_freq) + s(Stress) + s(syllable_struct) + s(lex_score_norm) + s(wm_score_num, k = 5) + s(scaled_phono_freq) + s(ID, bs = "re") + s(sent_id, bs = "re"), 
                    data = accurate_data, method = "REML", family = binomial)
 
 summary(acc_plot_11)
