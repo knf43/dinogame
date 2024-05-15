@@ -17,7 +17,7 @@ library(gratia)
 # Use file.choose() to open a dialog box for file selection
 file_path <- file.choose()
 
-# Read the CSV file into a data frame
+# Read the Excel file into a data frame
 dino_data <- read_excel(file_path)
 
 head(dino_data)
@@ -133,6 +133,12 @@ dino_data_filtered$scaled_phono_freq <- scale(dino_data_filtered$phono_freq)
 
 # Log transform rt_ms for slight right skewness
 dino_data_filtered$transformed_rt_ms <- log(dino_data_filtered$rt_ms + 1)
+
+#normalize lex score
+dino_data_filtered$lex_score_norm <- scale(dino_data_filtered$lex_score)
+
+# Convert wm_score to numeric
+dino_data_filtered$wm_score_num <- as.numeric(as.character(dino_data_filtered$wm_score))
 
 str(dino_data_filtered)
 
@@ -358,7 +364,7 @@ print(bp_test_log)
 print("Breusch-Pagan Test for Square Root Model:")
 print(bp_test_sqrt)
 
-# Log transformed RT_MS = most stable in terms  of residual varial consistency 
+# Log transformed RT_MS = most stable in terms  of residual variability consistency 
 # Base plot - Model 1
 
 rt_plot_1 <- gam(transformed_rt_ms ~ Trial + s(ID, bs = "re") + s(sent_id, bs = "re"), data = accurate_data, method = "REML")
@@ -419,6 +425,8 @@ ggplot(new_data, aes(x = syllable_struct, y = fit, fill = syllable_struct)) +
 # Fit the new model with syllable_struct as a parametric term and name it rt_plot_3
 rt_plot_3 <- gam(transformed_rt_ms ~ Trial + Stress + syllable_struct + s(ID, bs = "re") + s(sent_id, bs = "re"), data = accurate_data, method = "REML")
 
+summary(rt_plot_3)
+
 # Generate predictions for the original dataset
 accurate_data$predicted_rt <- predict(rt_plot_3, newdata = accurate_data, type = "response")
 
@@ -459,8 +467,8 @@ print(violin_plot)
 
 anova(model_2_linear, rt_plot_3, test = "Chisq")
 
-# Add lex score
-rt_plot_4 <- gam(transformed_rt_ms ~ Trial + Stress + syllable_struct + lex_score + s(ID, bs = "re") + s(sent_id, bs = "re"), data = accurate_data, method = "REML")
+# Add lex score (norm)
+rt_plot_4 <- gam(transformed_rt_ms ~ Trial + Stress + syllable_struct + lex_score_norm + s(ID, bs = "re") + s(sent_id, bs = "re"), data = accurate_data, method = "REML")
 
 # Summarize the updated model
 summary(rt_plot_4)
@@ -472,7 +480,8 @@ anova_comparison <- anova(rt_plot_3, rt_plot_4, test = "Chisq")
 print(anova_comparison)
 
 # Add WM score
-rt_plot_5 <- gam(transformed_rt_ms ~ Trial + Stress + syllable_struct + lex_score + s(wm_score_num, bs = "re") + s(Trial, bs = "re") + s(ID, bs = "re") + s(sent_id, bs = "re"), data = accurate_data, method = "REML")
+
+rt_plot_5 <- gam(transformed_rt_ms ~ Trial + Stress + syllable_struct + lex_score_norm + s(wm_score_num, bs = "re") + s(Trial, bs = "re") + s(ID, bs = "re") + s(sent_id, bs = "re"), data = accurate_data, method = "REML")
 
 # Summarize the updated model
 summary(rt_plot_5)
@@ -480,7 +489,7 @@ summary(rt_plot_5)
 anova(rt_plot_4, rt_plot_5, test = "Chisq")
 
 # Add phono freq
-rt_plot_6 <- gam(transformed_rt_ms ~ Trial + Stress + syllable_struct + lex_score + s(wm_score_num, bs = "re") + phono_freq + s(ID, bs = "re") + s(sent_id, bs = "re"), data = accurate_data, method = "REML")
+rt_plot_6 <- gam(transformed_rt_ms ~ Trial + Stress + syllable_struct + lex_score_norm + s(wm_score_num, bs = "re") + scaled_phono_freq + s(ID, bs = "re") + s(sent_id, bs = "re"), data = accurate_data, method = "REML")
 
 # Summarize the updated model
 summary(rt_plot_6)
@@ -492,7 +501,7 @@ anova_comparison <- anova(rt_plot_5, rt_plot_6, test = "Chisq")
 print(anova_comparison)
 
 # interaction stress and trial
-rt_plot_7 <- gam(transformed_rt_ms ~ s(Trial, by = Stress) + syllable_struct + lex_score + s(wm_score_num, bs = "re") + phono_freq + s(ID, bs = "re") + s(sent_id, bs = "re"), data = accurate_data, method = "REML")
+rt_plot_7 <- gam(transformed_rt_ms ~ s(Trial, by = Stress) + Stress + syllable_struct + lex_score_norm + s(wm_score_num, bs = "re") + scaled_phono_freq + s(ID, bs = "re") + s(sent_id, bs = "re"), data = accurate_data, method = "REML")
 
 # Summarize the updated model
 summary(rt_plot_7)
@@ -521,16 +530,188 @@ print(interaction_plot)
 anova(rt_plot_6, rt_plot_7, test = "Chisq")
 
 # Add interaction between syllable structure and trial 
-rt_plot_8 <- gam(transformed_rt_ms ~ s(Trial, by = syllable_struct) + (Trial, by = Stress) + syllable_struct + lex_score + s(wm_score_num, bs = "re") + phono_freq + s(ID, bs = "re") + s(sent_id, bs = "re"), data = accurate_data, method = "REML")
+rt_plot_8 <- gam(transformed_rt_ms ~ 
+                   s(Trial, by = syllable_struct) + 
+                   s(Trial, by = Stress) + 
+                   Stress +
+                   syllable_struct + 
+                   lex_score_norm + 
+                   s(wm_score_num, bs = "re") + 
+                   scaled_phono_freq + 
+                   s(ID, bs = "re") + 
+                   s(sent_id, bs = "re"), 
+                 data = accurate_data, method = "REML")
 
 # Summarize the updated model
 summary(rt_plot_8)
 
-#
+#Anova
 anova(rt_plot_7, rt_plot_8, test = "Chisq")
 
-# Add interaction between syllable structure and trial 
-rt_plot_8 <- gam(transformed_rt_ms ~ s(Trial, by = syllable_struct) + (Trial, by = Stress) + syllable_struct + lex_score + s(wm_score_num, bs = "re") + phono_freq + s(ID, bs = "re") + s(sent_id, bs = "re"), data = accurate_data, method = "REML")
+# Add interaction between lex score and trial 
+rt_plot_9 <- gam(transformed_rt_ms ~ 
+                   s(Trial, by = lex_score_norm) + 
+                   s(Trial, by = syllable_struct) + 
+                   s(Trial, by = Stress) + 
+                   Stress + 
+                   syllable_struct + 
+                   lex_score_norm + 
+                   s(wm_score_num, bs = "re") + 
+                   scaled_phono_freq + 
+                   s(ID, bs = "re") + 
+                   s(sent_id, bs = "re"), 
+                 data = accurate_data, method = "REML")
 
 # Summarize the updated model
-summary(rt_plot_8)
+summary(rt_plot_9)
+
+#Anova
+anova(rt_plot_8, rt_plot_9, test = "Chisq")
+
+# Add interaction between "wm_score_num" and trial 
+rt_plot_10 <- gam(transformed_rt_ms ~ 
+                    s(Trial, by = wm_score_num) + 
+                    s(Trial, by = lex_score_norm) + 
+                    s(Trial, by = syllable_struct) + 
+                    s(Trial, by = Stress) + 
+                    Stress + 
+                    syllable_struct + 
+                    lex_score_norm + 
+                    s(wm_score_num, bs = "re") + 
+                    scaled_phono_freq + 
+                    s(ID, bs = "re") + 
+                    s(sent_id, bs = "re"), 
+                  data = accurate_data, method = "REML")
+
+# Summarize the updated model
+summary(rt_plot_10)
+
+#Anova
+anova(rt_plot_9, rt_plot_10, test = "Chisq")
+
+#Add interaction between "phono_freq" and trial 
+rt_plot_11 <- gam(transformed_rt_ms ~ 
+                    s(Trial, by = scaled_phono_freq) + 
+                    s(Trial, by = wm_score_num) + 
+                    s(Trial, by = lex_score_norm) + 
+                    s(Trial, by = syllable_struct) + 
+                    s(Trial, by = Stress) + 
+                    Stress + 
+                    syllable_struct + 
+                    lex_score + 
+                    s(wm_score_num, bs = "re") + 
+                    scaled_phono_freq + 
+                    s(ID, bs = "re") + 
+                    s(sent_id, bs = "re"), 
+                  data = accurate_data, method = "REML")
+
+# Summarize the updated model
+summary(rt_plot_11)
+
+#Anova
+anova(rt_plot_10, rt_plot_11, test = "Chisq")
+
+# Accuracy GAMs
+str(dino_data_filtered)
+
+# Base plot - Model 1
+acc_plot_1 <- gam(Accuracy ~ Trial + s(ID, bs = "re") + s(sent_id, bs = "re"), data = dino_data_filtered, method = "REML", family = binomial)
+
+# Summarize the model
+summary(acc_plot_1)
+
+acc_plot_1_nonlinear <- gam(Accuracy ~ s(Trial) + s(ID, bs = "re") + s(sent_id, bs = "re"), 
+                  data = dino_data_filtered, method = "REML", family = binomial)
+
+# Summarize the model
+summary(acc_plot_1_nonlinear)
+
+# Model 2: Add Stress
+acc_plot_2 <- gam(Accuracy ~ s(Trial) + s(Stress) + s(ID, bs = "re") + s(sent_id, bs = "re"), 
+                  data = accurate_data, method = "REML", family = binomial)
+
+summary(acc_plot_2)
+
+anova(acc_plot_1, acc_plot_2, test = "Chisq")
+
+# Model 3: Add syllable_struct
+
+acc_plot_3 <- gam(Accuracy ~ s(Trial) + s(Stress) + s(syllable_struct) + s(ID, bs = "re") + s(sent_id, bs = "re"), 
+                  data = accurate_data, method = "REML", family = binomial)
+
+summary(acc_plot_3)
+
+anova(acc_plot_2, acc_plot_3, test = "Chisq")
+
+# Model 4: Add lex_score_norm
+
+acc_plot_4 <- gam(Accuracy ~ s(Trial) + s(Stress) + s(syllable_struct) + s(lex_score_norm) + s(ID, bs = "re") + s(sent_id, bs = "re"), 
+                  data = accurate_data, method = "REML", family = binomial)
+
+summary(acc_plot_4)
+
+anova(acc_plot_3, acc_plot_4, test = "Chisq")
+
+# Model 5: Add wm_score_num
+
+acc_plot_5 <- gam(Accuracy ~ s(Trial) + s(Stress) + s(syllable_struct) + s(lex_score_norm) + s(wm_score_num) + s(ID, bs = "re") + s(sent_id, bs = "re"), 
+                  data = accurate_data, method = "REML", family = binomial)
+
+summary(acc_plot_5)
+
+anova(acc_plot_4, acc_plot_5, test = "Chisq")
+
+# Model 6: Add scaled_phono_freq
+
+acc_plot_6 <- gam(Accuracy ~ s(Trial) + s(Stress) + s(syllable_struct) + s(lex_score_norm) + s(wm_score_num) + s(scaled_phono_freq) + s(ID, bs = "re") + s(sent_id, bs = "re"), 
+                  data = accurate_data, method = "REML", family = binomial)
+
+summary(acc_plot_6)
+
+anova(acc_plot_5, acc_plot_6, test = "Chisq")
+
+# Model 7: Interaction Trial:Stress
+
+acc_plot_7 <- gam(Accuracy ~ s(Trial, by = Stress) + s(Stress) + s(syllable_struct) + s(lex_score_norm) + s(wm_score_num) + s(scaled_phono_freq) + s(ID, bs = "re") + s(sent_id, bs = "re"), 
+                  data = accurate_data, method = "REML", family = binomial)
+
+summary(acc_plot_7)
+
+anova(acc_plot_6, acc_plot_7, test = "Chisq")
+
+# Model 8: Interaction Trial: syllable_struct
+
+acc_plot_8 <- gam(Accuracy ~ s(Trial, by = syllable_struct) + s(Stress) + s(syllable_struct) + s(lex_score_norm) + s(wm_score_num) + s(scaled_phono_freq) + s(ID, bs = "re") + s(sent_id, bs = "re"), 
+                  data = accurate_data, method = "REML", family = binomial)
+
+summary(acc_plot_8)
+
+anova(acc_plot_7, acc_plot_8, test = "Chisq")
+
+# Model 9: Interaction Trial:lex_score_norm
+
+acc_plot_9 <- gam(Accuracy ~ s(Trial, by = lex_score_norm) + s(Stress) + s(syllable_struct) + s(lex_score_norm) + s(wm_score_num) + s(scaled_phono_freq) + s(ID, bs = "re") + s(sent_id, bs = "re"), 
+                  data = accurate_data, method = "REML", family = binomial)
+
+summary(acc_plot_9)
+
+anova(acc_plot_8, acc_plot_9, test = "Chisq")
+
+# Model 10: Interaction Trial:wm_score_num
+acc_plot_10 <- gam(Accuracy ~ s(Trial, by = wm_score_num) + s(Stress) + s(syllable_struct) + s(lex_score_norm) + s(wm_score_num) + s(scaled_phono_freq) + s(ID, bs = "re") + s(sent_id, bs = "re"), 
+                   data = accurate_data, method = "REML", family = binomial)
+
+summary(acc_plot_10)
+
+anova(acc_plot_9, acc_plot_10, test = "Chisq")
+
+# Model 11: Interaction Trial: scaled_phono_freq
+
+acc_plot_11 <- gam(Accuracy ~ s(Trial, by = scaled_phono_freq) + s(Stress) + s(syllable_struct) + s(lex_score_norm) + s(wm_score_num) + s(scaled_phono_freq) + s(ID, bs = "re") + s(sent_id, bs = "re"), 
+                   data = accurate_data, method = "REML", family = binomial)
+
+summary(acc_plot_11)
+
+anova(acc_plot_10, acc_plot_11, test = "Chisq")
+
+
